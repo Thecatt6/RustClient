@@ -1,5 +1,5 @@
 [package]
-name = "horizon-liquidaddon"
+name = "rustclient"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.95"
@@ -10,4 +10,4 @@ publish = false
 [lib]
 # Keep the testable logic in the same source file that will become the
 # injected module in the eventual Horizon native-mod bundle.
-path = "mixins/liquidaddon/runtime.rs"
+path = "mixins/rustclient/runtime.rs"
