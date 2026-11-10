@@ -135,15 +135,16 @@ impl MousePatternGuard {
         //    step of a window that is always in the right order.
         self.ring[self.cursor] = pack(y, p);
         let period = self.cycle();
-        if period > 0 && !(self.ring[self.cursor] == REST && self.cycle_is_rest(period)) {
-            if let Some((fixed_yaw, fixed_pitch)) = self.break_cycle(y, p) {
-                self.owed_yaw = (self.owed_yaw + (y - fixed_yaw)).clamp(-MAX_OWED, MAX_OWED);
-                self.owed_pitch = (self.owed_pitch + (p - fixed_pitch)).clamp(-MAX_OWED, MAX_OWED);
-                y = fixed_yaw;
-                p = fixed_pitch;
-                self.ring[self.cursor] = pack(y, p);
-                self.repairs += 1;
-            }
+        if period > 0
+            && !(self.ring[self.cursor] == REST && self.cycle_is_rest(period))
+            && let Some((fixed_yaw, fixed_pitch)) = self.break_cycle(y, p)
+        {
+            self.owed_yaw = (self.owed_yaw + (y - fixed_yaw)).clamp(-MAX_OWED, MAX_OWED);
+            self.owed_pitch = (self.owed_pitch + (p - fixed_pitch)).clamp(-MAX_OWED, MAX_OWED);
+            y = fixed_yaw;
+            p = fixed_pitch;
+            self.ring[self.cursor] = pack(y, p);
+            self.repairs += 1;
         }
 
         self.cursor = (self.cursor + 1) % self.history;

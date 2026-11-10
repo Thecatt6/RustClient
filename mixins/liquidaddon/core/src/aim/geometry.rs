@@ -51,7 +51,7 @@ impl Aabb {
     /// `AABB.clip`: how far along `from -> to` the box starts, in `0..=1`, or `None` when the segment
     /// misses it. A segment that starts inside the box returns `0.0`.
     pub fn clip(&self, from: Vec3, to: Vec3) -> Option<f64> {
-        let d = to.sub(from);
+        let d = to - from;
         let mut t_min = 0.0_f64;
         let mut t_max = 1.0_f64;
         let slabs = [
@@ -99,9 +99,7 @@ pub struct TargetShape {
 pub fn point_on(aim_point: AimPoint, shape: &TargetShape, eyes: Vec3, aim: Rotation) -> Vec3 {
     match aim_point {
         AimPoint::Head => shape.eye,
-        AimPoint::Chest => shape
-            .feet
-            .add(Vec3::new(0.0, f64::from(shape.height) * 0.6, 0.0)),
+        AimPoint::Chest => shape.feet + Vec3::new(0.0, f64::from(shape.height) * 0.6, 0.0),
         AimPoint::Closest => closest_point(eyes, aim, &shape.bbox),
     }
 }
@@ -121,7 +119,7 @@ pub fn closest_point(eyes: Vec3, aim: Rotation, bbox: &Aabb) -> Vec3 {
         return center;
     }
 
-    let hit = eyes.add(aim.direction_vector().scale(distance));
+    let hit = eyes + aim.direction_vector().scale(distance);
     Vec3::new(
         clamp_axis(hit.x, bbox.min.x + 0.12, bbox.max.x - 0.12),
         clamp_axis(hit.y, bbox.min.y + 0.10, bbox.max.y - 0.12),
@@ -165,7 +163,7 @@ impl AimOffset {
     /// Return the held offset, redrawing from the current box when its deadline passes.
     pub fn sample(&mut self, now_ms: u64, bbox: &Aabb, rng: &mut SplitMix64) -> Vec3 {
         if now_ms > self.until_ms {
-            let size = bbox.max.sub(bbox.min);
+            let size = bbox.max - bbox.min;
             self.until_ms = now_ms.saturating_add(150 + (rng.next_u64() % 250));
             self.offset = Vec3::new(
                 (rng.next_f64() - 0.5) * size.x * 0.24,
@@ -181,7 +179,7 @@ impl AimOffset {
 /// `AimassistCore.goalRotation`.
 pub fn predict_point(point: Vec3, velocity: Vec3, predict: f32, predict_size: i32) -> Vec3 {
     if predict > 0.0 && predict_size > 0 {
-        point.add(velocity.scale(f64::from(predict) * f64::from(predict_size)))
+        point + velocity.scale(f64::from(predict) * f64::from(predict_size))
     } else {
         point
     }
@@ -209,7 +207,7 @@ pub fn on_crosshair(
         return true;
     }
     let reach_length = interaction_range.max(configured_range) + 0.5;
-    let end = eyes.add(view.direction_vector().scale(reach_length));
+    let end = eyes + view.direction_vector().scale(reach_length);
     bbox.clip(eyes, end).is_some()
 }
 
@@ -244,12 +242,8 @@ pub fn max_cos_to_box(eyes: Vec3, view: Vec3, bbox: &Aabb) -> f64 {
             best = best.max(edge_max_cos(
                 eyes,
                 view,
-                bbox.min.x,
-                y,
-                z,
-                bbox.max.x - bbox.min.x,
-                0.0,
-                0.0,
+                Vec3::new(bbox.min.x, y, z),
+                Vec3::new(bbox.max.x - bbox.min.x, 0.0, 0.0),
             ));
         }
     }
@@ -266,12 +260,8 @@ pub fn max_cos_to_box(eyes: Vec3, view: Vec3, bbox: &Aabb) -> f64 {
             best = best.max(edge_max_cos(
                 eyes,
                 view,
-                x,
-                bbox.min.y,
-                z,
-                0.0,
-                bbox.max.y - bbox.min.y,
-                0.0,
+                Vec3::new(x, bbox.min.y, z),
+                Vec3::new(0.0, bbox.max.y - bbox.min.y, 0.0),
             ));
         }
     }
@@ -288,12 +278,8 @@ pub fn max_cos_to_box(eyes: Vec3, view: Vec3, bbox: &Aabb) -> f64 {
             best = best.max(edge_max_cos(
                 eyes,
                 view,
-                x,
-                y,
-                bbox.min.z,
-                0.0,
-                0.0,
-                bbox.max.z - bbox.min.z,
+                Vec3::new(x, y, bbox.min.z),
+                Vec3::new(0.0, 0.0, bbox.max.z - bbox.min.z),
             ));
         }
     }
@@ -364,24 +350,13 @@ fn ray_hits_box(eyes: Vec3, view: Vec3, bbox: &Aabb) -> bool {
     true
 }
 
-fn edge_max_cos(
-    eyes: Vec3,
-    view: Vec3,
-    ax: f64,
-    ay: f64,
-    az: f64,
-    wx: f64,
-    wy: f64,
-    wz: f64,
-) -> f64 {
-    let px = ax - eyes.x;
-    let py = ay - eyes.y;
-    let pz = az - eyes.z;
-    let a = px * view.x + py * view.y + pz * view.z;
-    let b = wx * view.x + wy * view.y + wz * view.z;
-    let c = px * px + py * py + pz * pz;
-    let d = px * wx + py * wy + pz * wz;
-    let e = wx * wx + wy * wy + wz * wz;
+fn edge_max_cos(eyes: Vec3, view: Vec3, start: Vec3, direction: Vec3) -> f64 {
+    let relative = start - eyes;
+    let a = relative.dot(view);
+    let b = direction.dot(view);
+    let c = relative.dot(relative);
+    let d = relative.dot(direction);
+    let e = direction.dot(direction);
 
     let mut best = cos_at(a, c).max(cos_at(a + b, c + 2.0 * d + e));
     // A zero denominator yields NaN or infinity, both rejected by the open-interval test.
@@ -545,7 +520,7 @@ mod tests {
         let above = Rotation::new(0.0, -15.0);
         let angle = crosshair_angle_to_box(eye, above, &bbox);
         assert!(
-            angle >= 0.0 && angle < 15.0,
+            (0.0..15.0).contains(&angle),
             "the box spans the crosshair: {angle}°"
         );
     }

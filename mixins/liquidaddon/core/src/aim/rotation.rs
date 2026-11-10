@@ -13,6 +13,8 @@
 //! * **yaw 0 looks towards +Z, yaw -90 towards +X, pitch -90 is straight up and +90 is down** — the
 //!   same numbers as the game, so a value copied from a log means the same thing on both sides.
 
+use std::ops::{Add, Sub};
+
 use super::ai_features::wrap;
 
 /// The default vertical step cap in `AimSettings.pitchStepMax`.
@@ -38,16 +40,12 @@ impl Vec3 {
         Self { x, y, z }
     }
 
-    pub fn add(self, other: Vec3) -> Vec3 {
-        Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
-    }
-
-    pub fn sub(self, other: Vec3) -> Vec3 {
-        Vec3::new(self.x - other.x, self.y - other.y, self.z - other.z)
-    }
-
     pub fn scale(self, factor: f64) -> Vec3 {
         Vec3::new(self.x * factor, self.y * factor, self.z * factor)
+    }
+
+    pub fn dot(self, other: Vec3) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
     }
 
     /// Horizontal length, the way `Entity.distanceToSqr`'s callers use it.
@@ -56,11 +54,27 @@ impl Vec3 {
     }
 
     pub fn length(self) -> f64 {
-        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+        self.dot(self).sqrt()
     }
 
     pub fn distance_to(self, other: Vec3) -> f64 {
-        self.sub(other).length()
+        (self - other).length()
+    }
+}
+
+impl Add for Vec3 {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        Self::new(self.x + other.x, self.y + other.y, self.z + other.z)
+    }
+}
+
+impl Sub for Vec3 {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self::new(self.x - other.x, self.y - other.y, self.z - other.z)
     }
 }
 
@@ -99,7 +113,7 @@ impl Rotation {
 
     /// The rotation from `eyes` to `point` (`Entity.lookAt` / LiquidBounce's `Rotation.lookingAt`).
     pub fn looking_at(point: Vec3, eyes: Vec3) -> Self {
-        let d = point.sub(eyes);
+        let d = point - eyes;
         let horizontal = d.horizontal_length();
         let yaw = d.z.atan2(d.x).to_degrees() - 90.0;
         let pitch = -d.y.atan2(horizontal).to_degrees();
@@ -163,7 +177,7 @@ mod tests {
         for (yaw, pitch) in [(0.0, 0.0), (37.5, 12.0), (-120.0, -33.0), (179.0, 44.0)] {
             let eye = Vec3::new(12.5, 64.0, -3.25);
             let rotation = Rotation::new(yaw, pitch);
-            let point = eye.add(rotation.direction_vector().scale(7.0));
+            let point = eye + rotation.direction_vector().scale(7.0);
             let back = Rotation::looking_at(point, eye);
             close(rotation.normalised().yaw, back.yaw);
             close(rotation.pitch, back.pitch);

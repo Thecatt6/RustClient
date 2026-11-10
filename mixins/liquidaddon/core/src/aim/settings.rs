@@ -21,11 +21,11 @@ use super::rotation::DEFAULT_PITCH_STEP_MAX;
 pub const ROTATION_MODE_KEY: &str = "aim_rotation_mode";
 
 macro_rules! tagged_enum {
-    ($(#[$attr:meta])* $name:ident { $($variant:ident => $tag:literal),+ $(,)? }) => {
+    ($(#[$attr:meta])* $name:ident { $($(#[$variant_attr:meta])* $variant:ident => $tag:literal),+ $(,)? }) => {
         $(#[$attr])*
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub enum $name {
-            $($variant),+
+            $($(#[$variant_attr])* $variant),+
         }
 
         impl $name {
@@ -120,16 +120,13 @@ tagged_enum!(Preset {
 tagged_enum!(
     /// Where a computed rotation is applied. Unlike the source's `Silent` boolean, this is a named
     /// choice and is editable at runtime from the native mod settings page.
+    #[derive(Default)]
     RotationMode {
-    Visible => "Visible",
-    Silent => "Silent",
-});
-
-impl Default for RotationMode {
-    fn default() -> Self {
-        Self::Visible
+        #[default]
+        Visible => "Visible",
+        Silent => "Silent",
     }
-}
+);
 
 impl RotationMode {
     /// The next GUI choice (there are exactly two).
@@ -569,8 +566,10 @@ mod tests {
         assert_eq!(RotationMode::Visible.next(), RotationMode::Silent);
         assert_eq!(RotationMode::Silent.next(), RotationMode::Visible);
 
-        let mut config = AimConfig::default();
-        config.rotation_mode = RotationMode::Silent;
+        let config = AimConfig {
+            rotation_mode: RotationMode::Silent,
+            ..AimConfig::default()
+        };
         assert!(config.silent());
         assert_eq!(config.rotation_mode(), RotationMode::Silent);
     }

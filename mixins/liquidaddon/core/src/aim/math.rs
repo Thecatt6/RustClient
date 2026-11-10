@@ -322,7 +322,12 @@ impl MathAimEngine {
         step_pitch = soft_limit(step_pitch, pitch_limit);
 
         self.apply_aim(
-            settings, input.from, step_yaw, step_pitch, share, false, input.gcd,
+            settings,
+            input.from,
+            Rotation::new(step_yaw, step_pitch),
+            share,
+            false,
+            input.gcd,
         )
     }
 
@@ -390,7 +395,12 @@ impl MathAimEngine {
             0.0
         };
         self.apply_aim(
-            settings, input.from, step_yaw, step_pitch, 0.0, true, input.gcd,
+            settings,
+            input.from,
+            Rotation::new(step_yaw, step_pitch),
+            0.0,
+            true,
+            input.gcd,
         )
     }
 
@@ -398,15 +408,14 @@ impl MathAimEngine {
         &mut self,
         settings: &impl AimSettings,
         from: Rotation,
-        step_yaw: f32,
-        step_pitch: f32,
+        step_delta: Rotation,
         curve_share: f32,
         rest_drift: bool,
         gcd: f64,
     ) -> Option<MathStep> {
         let desired = Rotation::new(
-            from.yaw + step_yaw,
-            (from.pitch + step_pitch).clamp(-PLAN_PITCH_LIMIT, PLAN_PITCH_LIMIT),
+            from.yaw + step_delta.yaw,
+            (from.pitch + step_delta.pitch).clamp(-PLAN_PITCH_LIMIT, PLAN_PITCH_LIMIT),
         );
         let quantized = if settings.gcd_fix() {
             self.quantize_delta(settings, from, desired, gcd, rest_drift)?
@@ -555,15 +564,17 @@ impl MathAimEngine {
             }
         }
 
-        if let Some(last) = self.last_counts_yaw {
-            if yaw != 0 && yaw == last {
-                yaw += if self.rng.next_bool() { 1 } else { -1 };
-            }
+        if let Some(last) = self.last_counts_yaw
+            && yaw != 0
+            && yaw == last
+        {
+            yaw += if self.rng.next_bool() { 1 } else { -1 };
         }
-        if let Some(last) = self.last_counts_pitch {
-            if pitch != 0 && pitch == last {
-                pitch += if self.rng.next_bool() { 1 } else { -1 };
-            }
+        if let Some(last) = self.last_counts_pitch
+            && pitch != 0
+            && pitch == last
+        {
+            pitch += if self.rng.next_bool() { 1 } else { -1 };
         }
 
         let overshoot_chance =
@@ -734,9 +745,9 @@ mod tests {
         close(0.999_630, soft_limit(1.0, 30.0), 1.0e-5);
         assert_eq!(soft_limit(4.0, 0.0), 0.0);
         let capped = soft_limit(100.0, 7.0);
-        assert!(capped > 6.99 && capped <= 7.0);
+        assert!((6.99..=7.0).contains(&capped));
         let negative_capped = soft_limit(-100.0, 7.0);
-        assert!(negative_capped >= -7.0 && negative_capped < -6.99);
+        assert!((-7.0..-6.99).contains(&negative_capped));
     }
 
     #[test]
