@@ -1,7 +1,16 @@
-// Testable logic ported from `LiquidAddon`'s DoubleClicks module.
-//
-// This file is also the intended Horizon injected-module source, so it stays
-// independent of LiquidBounce and uses only the Rust standard library.
+//! Testable logic ported from `LiquidAddon`'s `DoubleClicks` module
+//! (`modules/doubleclicks/DoubleClickScheduler.kt`).
+//!
+//! The module answers each real click with up to three delayed follow-ups, and the whole difficulty
+//! is not "click more" but *when*: a follow-up must never ride the input batch that caused it, and
+//! a player holding attack must not accumulate a burst that keeps firing seconds after they stop.
+//! Both are decisions about a queue, so both live here, independent of LiquidBounce and of the
+//! game, and the Horizon side only supplies the two facts each decision needs (is the crosshair on
+//! an entity, is the game already mining or inside the miss cooldown).
+//!
+//! The follow-up itself goes through the vanilla path: on Horizon that is the
+//! `native_interaction_key` hook (API 138), which is cancellable but whose cancelled attack still
+//! swings unless the swing is cleared too — see `PORTING.md` for the exact contract.
 
 use std::collections::VecDeque;
 

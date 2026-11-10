@@ -5,5 +5,13 @@
   "horizon_revision": "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca",
   "horizon_mixins_repository": "https://github.com/horizon-rust/horizon-mixins",
   "horizon_mixins_revision": "5a64af938ec86b00d53d16a408aabc0038fb3e57",
-  "minecraft_version": "26.3"
+  "minecraft_version": "26.3",
+  "rust_toolchain": "1.95.0",
+  "native_hooks_api": {
+    "interaction_key": 138,
+    "movement_input": 360,
+    "camera_pose": 402,
+    "client_packet": 408,
+    "send_packet": 409
+  }
 }
