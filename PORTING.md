@@ -120,6 +120,26 @@ Client-side reads the bundle can use without a hook (`Host` helpers, documented 
 `living_hand_item`, `client_entities`, `raycast`, `view_hit` (116), `camera`, `block_collision`,
 `playing`, `tick_stats`.
 
+## Scope: what "all of LiquidBounce" can mean
+
+LiquidBounce is a whole client — roughly 300 k lines of Kotlin across a module/settings framework, a
+click GUI, an event bus, a rotation manager, HUD/element renderers, commands, config serialisation
+and the deep-learning engine — and this add-on is a thin layer on top of it. Porting "everything" is
+not one job, and it is not what the 13 modules need. The realistic dependency list, in the order the
+add-on actually touches them:
+
+| LiquidBounce primitive | What the add-on uses it for | Where it lands here |
+|---|---|---|
+| `Module` / `Toggleable` / `Choice` settings | every module's state | Horizon-side settings struct + the enums from `AimEngine.kt` |
+| `RotationManager` | aim assist, hit flick, scaffold | the rotation mixin described above |
+| `EventBus` + `EventMotion`/`EventAttack` | module hooks | Horizon's typed hooks, no bus |
+| `CombatSample` / `DeepLearningEngine` / `.params` models | `AimbotAI`, `AutoPearlAI` | new Rust inference + [the input order](crates/liquidaddon-core/src/aim/ai_features.rs) |
+| `CommandRegistrar`, chat formatting, `ClickGUI` | `/liquidaddon`, HUD tags | `Host::send_chat` / a mod screen; the HUD tags are plain strings already |
+
+Everything else in LiquidBounce (its own KillAura, Scaffold, Disabler, exploits…) is out of scope
+unless a module here depends on it. A useful rule for this repository: *if the pinned LiquidAddon
+does not call it, it is not part of the port.*
+
 ## Module-by-module plan
 
 `Core` is what already lives in `crates/liquidaddon-core`; everything else is work.

@@ -174,8 +174,9 @@ pub fn format(s: &Snapshot, ai_strength: f32) -> String {
     if s.ticks == 0 {
         return "nessun tick AI in questa sessione".to_string();
     }
-    let other = if s.fb_other > 0 {
-        format!(", other {}", s.fb_other)
+    let fb_other = s.fb_other;
+    let other = if fb_other > 0 {
+        format!(", other {fb_other}")
     } else {
         String::new()
     };
