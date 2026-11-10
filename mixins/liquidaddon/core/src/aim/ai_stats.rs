@@ -165,7 +165,11 @@ fn percent(part: i32, whole: i32) -> i32 {
 }
 
 fn mean(sum: f64, count: i32) -> f32 {
-    if count <= 0 { 0.0 } else { (sum / f64::from(count)) as f32 }
+    if count <= 0 {
+        0.0
+    } else {
+        (sum / f64::from(count)) as f32
+    }
 }
 
 /// The chat line, exactly as [`Snapshot`] says it. A session with no AI tick yet is not a line of
@@ -238,7 +242,7 @@ pub fn fallback_kind(reason: &str) -> Fallback {
 
 #[cfg(test)]
 mod tests {
-    use super::{fallback_kind, format, pearson, AiStats, Fallback, Snapshot, Step, WINDOW};
+    use super::{AiStats, Fallback, Snapshot, Step, WINDOW, fallback_kind, format, pearson};
 
     fn empty() -> Snapshot {
         Snapshot {
@@ -271,7 +275,14 @@ mod tests {
         stats.note_faded();
         for i in 0..3 {
             let v = i as f32 + 1.0;
-            stats.note_used(1.2, 0.85, Step { ai_yaw: v, curve_yaw: v });
+            stats.note_used(
+                1.2,
+                0.85,
+                Step {
+                    ai_yaw: v,
+                    curve_yaw: v,
+                },
+            );
         }
         let line = format(&stats.snapshot(), 100.0);
         assert_eq!(
@@ -296,14 +307,31 @@ mod tests {
         for _ in 0..3 {
             stats.note_requested();
         }
-        stats.note_used(1.0, 1.0, Step { ai_yaw: 1.0, curve_yaw: 1.0 });
-        stats.note_used(1.0, 1.0, Step { ai_yaw: 2.0, curve_yaw: 2.0 });
+        stats.note_used(
+            1.0,
+            1.0,
+            Step {
+                ai_yaw: 1.0,
+                curve_yaw: 1.0,
+            },
+        );
+        stats.note_used(
+            1.0,
+            1.0,
+            Step {
+                ai_yaw: 2.0,
+                curve_yaw: 2.0,
+            },
+        );
         assert_eq!(stats.snapshot().used_pct, 67);
     }
 
     #[test]
     fn the_reasons_of_a_fallback_land_in_the_family_a_player_reads() {
-        assert_eq!(fallback_kind("deep learning not initialised"), Fallback::Init);
+        assert_eq!(
+            fallback_kind("deep learning not initialised"),
+            Fallback::Init
+        );
         assert_eq!(fallback_kind("no model '21KC11KP' loaded"), Fallback::Model);
         assert_eq!(fallback_kind("model returned NaN"), Fallback::Nan);
         assert_eq!(fallback_kind("model returned 1 values"), Fallback::Other);
@@ -330,11 +358,25 @@ mod tests {
         // so the fight must be gone from the number by the time the agreement ends.
         for i in 0..5 {
             let v = i as f32 + 1.0;
-            stats.note_used(1.0, 1.0, Step { ai_yaw: -v, curve_yaw: v });
+            stats.note_used(
+                1.0,
+                1.0,
+                Step {
+                    ai_yaw: -v,
+                    curve_yaw: v,
+                },
+            );
         }
         for i in 0..20 {
             let v = i as f32 + 1.0;
-            stats.note_used(1.0, 1.0, Step { ai_yaw: v, curve_yaw: v });
+            stats.note_used(
+                1.0,
+                1.0,
+                Step {
+                    ai_yaw: v,
+                    curve_yaw: v,
+                },
+            );
         }
         let corr = stats.snapshot().corr;
         assert!((corr - 1.0).abs() < 1e-3, "corr {corr}");
@@ -345,14 +387,31 @@ mod tests {
         let mut stats = AiStats::new();
         for i in 0..WINDOW - 1 {
             let v = i as f32;
-            stats.note_used(1.0, 1.0, Step { ai_yaw: v, curve_yaw: v * 2.0 });
+            stats.note_used(
+                1.0,
+                1.0,
+                Step {
+                    ai_yaw: v,
+                    curve_yaw: v * 2.0,
+                },
+            );
         }
         assert!(!stats.window_full(), "one pair short is partial evidence");
-        stats.note_used(1.0, 1.0, Step { ai_yaw: 99.0, curve_yaw: 198.0 });
+        stats.note_used(
+            1.0,
+            1.0,
+            Step {
+                ai_yaw: 99.0,
+                curve_yaw: 198.0,
+            },
+        );
         assert!(stats.window_full(), "WINDOW pairs fill the window");
         assert_eq!(stats.snapshot().corr, stats.window_corr());
         let corr = stats.window_corr();
-        assert!((corr - 1.0).abs() < 1e-3, "the pairs are one line: corr {corr}");
+        assert!(
+            (corr - 1.0).abs() < 1e-3,
+            "the pairs are one line: corr {corr}"
+        );
     }
 
     #[test]
@@ -361,8 +420,18 @@ mod tests {
         for _ in 0..3 {
             stats.note_requested();
         }
-        stats.note_used(1.0, 1.0, Step { ai_yaw: 1.0, curve_yaw: 1.0 });
+        stats.note_used(
+            1.0,
+            1.0,
+            Step {
+                ai_yaw: 1.0,
+                curve_yaw: 1.0,
+            },
+        );
         stats.reset();
-        assert_eq!(format(&stats.snapshot(), 100.0), "nessun tick AI in questa sessione");
+        assert_eq!(
+            format(&stats.snapshot(), 100.0),
+            "nessun tick AI in questa sessione"
+        );
     }
 }

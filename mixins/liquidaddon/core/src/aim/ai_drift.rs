@@ -56,13 +56,17 @@ pub fn model_share(corr: f32, window_full: bool) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{model_share, DRIFTED_MODEL_SHARE, MIN_CORR};
+    use super::{DRIFTED_MODEL_SHARE, MIN_CORR, model_share};
     use crate::aim::ai_stats::{AiStats, Step, WINDOW};
 
     #[test]
     fn an_agreeing_window_leaves_the_model_alone() {
         assert_eq!(model_share(0.71, true), 1.0);
-        assert_eq!(model_share(MIN_CORR, true), 1.0, "the threshold itself is still agreement");
+        assert_eq!(
+            model_share(MIN_CORR, true),
+            1.0,
+            "the threshold itself is still agreement"
+        );
         assert_eq!(model_share(1.0, true), 1.0);
     }
 
@@ -102,7 +106,10 @@ mod tests {
             stats.note_used(
                 1.2 + i * 0.01,
                 0.8,
-                Step { ai_yaw: 1.0 + i * 0.1, curve_yaw: 2.0 + i * 0.2 },
+                Step {
+                    ai_yaw: 1.0 + i * 0.1,
+                    curve_yaw: 2.0 + i * 0.2,
+                },
             );
         }
         let corr = stats.snapshot().corr;
@@ -123,7 +130,10 @@ mod tests {
             stats.note_used(
                 1.0,
                 1.0,
-                Step { ai_yaw: 1.0 + i * 0.1, curve_yaw: 2.0 - i * 0.2 },
+                Step {
+                    ai_yaw: 1.0 + i * 0.1,
+                    curve_yaw: 2.0 - i * 0.2,
+                },
             );
         }
         let drifted = stats.snapshot().corr;

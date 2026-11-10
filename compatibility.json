@@ -1,12 +1,18 @@
 {
   "source_repository": "https://github.com/Thecatt6/LiquidAddon",
   "source_revision": "c128aaf0ffb98a815661d24381d1f548508e0b80",
+  "license": "GPL-3.0-only",
   "horizon_repository": "https://github.com/horizon-rust/horizon",
   "horizon_revision": "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca",
   "horizon_mixins_repository": "https://github.com/horizon-rust/horizon-mixins",
   "horizon_mixins_revision": "5a64af938ec86b00d53d16a408aabc0038fb3e57",
   "minecraft_version": "26.3",
   "rust_toolchain": "1.95.0",
+  "native_named_hooks": {
+    "mods": 1,
+    "settings": 1,
+    "settings_click": 1
+  },
   "native_hooks_api": {
     "interaction_key": 138,
     "movement_input": 360,

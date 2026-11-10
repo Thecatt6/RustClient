@@ -1,11 +1,11 @@
 [package]
 name = "liquidaddon-core"
 description = "Game-independent logic ported from Thecatt6/LiquidAddon, kept free of Horizon and LiquidBounce types"
-version.workspace = true
-edition.workspace = true
-rust-version.workspace = true
-license.workspace = true
-publish.workspace = true
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "GPL-3.0-only"
+publish = false
 
 [lib]
 name = "liquidaddon_core"

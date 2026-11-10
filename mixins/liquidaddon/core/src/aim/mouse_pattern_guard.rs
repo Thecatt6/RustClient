@@ -252,7 +252,11 @@ fn nudge(counts: i32, sign: i32, amount: i32) -> Option<i32> {
 /// The step after a debt of `owed` counts, kept on the same side of zero as it was.
 fn settle(step: i32, owed: i32) -> i32 {
     let settled = step + owed;
-    if step > 0 { settled.max(0) } else { settled.min(0) }
+    if step > 0 {
+        settled.max(0)
+    } else {
+        settled.min(0)
+    }
 }
 
 fn pack(yaw: i32, pitch: i32) -> u64 {
@@ -289,7 +293,10 @@ mod tests {
             .map(|tick| guard.guard(if tick % 2 == 0 { 1 } else { -1 }, 0))
             .collect();
 
-        assert!(!closes_a_cycle(&out, 6, 3), "the guard left a period cycle in {out:?}");
+        assert!(
+            !closes_a_cycle(&out, 6, 3),
+            "the guard left a period cycle in {out:?}"
+        );
         assert!(guard.repairs() > 0, "the guard never had to do anything");
         // The path is what was planned: a repair is paid back, it is not a detour.
         let drift: i32 = out.iter().map(|(yaw, _)| *yaw).sum();
@@ -301,7 +308,10 @@ mod tests {
         let mut guard = MousePatternGuard::new(1);
         let out: Vec<(i32, i32)> = (0..60).map(|_| guard.guard(3, 1)).collect();
 
-        assert!(!closes_a_cycle(&out, 6, 3), "the guard left a period cycle in {out:?}");
+        assert!(
+            !closes_a_cycle(&out, 6, 3),
+            "the guard left a period cycle in {out:?}"
+        );
         assert!(guard.repairs() > 0);
         assert_eq!(
             out.iter().map(|(yaw, _)| *yaw).sum::<i32>(),
@@ -317,7 +327,11 @@ mod tests {
         for _ in 0..40 {
             assert_eq!(guard.guard(0, 0), (0, 0));
         }
-        assert_eq!(guard.repairs(), 0, "resting is not a pattern: nothing may be invented out of it");
+        assert_eq!(
+            guard.repairs(),
+            0,
+            "resting is not a pattern: nothing may be invented out of it"
+        );
     }
 
     #[test]
@@ -342,7 +356,10 @@ mod tests {
             (3, 1),
         ];
         let out: Vec<(i32, i32)> = planned.iter().map(|(y, p)| guard.guard(*y, *p)).collect();
-        assert_eq!(out, planned, "a sequence that never repeats was repaired anyway");
+        assert_eq!(
+            out, planned,
+            "a sequence that never repeats was repaired anyway"
+        );
         assert_eq!(guard.repairs(), 0);
     }
 
@@ -352,7 +369,10 @@ mod tests {
         // The assist pulling one count at a time, for four seconds: the worst case for a cycle.
         let out: Vec<(i32, i32)> = (0..80).map(|_| guard.guard(1, 0)).collect();
 
-        assert!(out.iter().all(|(yaw, _)| *yaw >= 0), "a repair walked the aim backwards: {out:?}");
+        assert!(
+            out.iter().all(|(yaw, _)| *yaw >= 0),
+            "a repair walked the aim backwards: {out:?}"
+        );
         assert!(!closes_a_cycle(&out, 6, 3));
         assert_eq!(
             out.iter().map(|(yaw, _)| *yaw).sum::<i32>(),
@@ -377,7 +397,10 @@ mod tests {
             error -= f64::from(step.0);
         }
 
-        assert!(!closes_a_cycle(&out, 6, 3), "the loop still closes a cycle: {out:?}");
+        assert!(
+            !closes_a_cycle(&out, 6, 3),
+            "the loop still closes a cycle: {out:?}"
+        );
         let distinct: std::collections::BTreeSet<i32> = out.iter().map(|(yaw, _)| *yaw).collect();
         assert!(distinct.len() >= 4, "too few distinct steps left: {out:?}");
         assert!(error.abs() < 4.0, "the aim lost the target: error={error}");

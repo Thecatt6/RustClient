@@ -30,7 +30,8 @@ pub const NONE_DEGREES: f32 = 45.0;
 /// A `NaN` is not a range: it is a number the loop could not compute, and the model must not be
 /// asked to answer for it.
 pub fn blend(blocks: f32, degrees: f32) -> f32 {
-    let reach = ramp(blocks, FULL_BLOCKS, NONE_BLOCKS).min(ramp(degrees, FULL_DEGREES, NONE_DEGREES));
+    let reach =
+        ramp(blocks, FULL_BLOCKS, NONE_BLOCKS).min(ramp(degrees, FULL_DEGREES, NONE_DEGREES));
     if reach.is_nan() {
         return 0.0;
     }
@@ -55,7 +56,10 @@ mod tests {
     use super::blend;
 
     fn close(expected: f32, actual: f32) {
-        assert!((expected - actual).abs() < 1.0e-4, "expected {expected}, got {actual}");
+        assert!(
+            (expected - actual).abs() < 1.0e-4,
+            "expected {expected}, got {actual}"
+        );
     }
 
     #[test]

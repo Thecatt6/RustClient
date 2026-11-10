@@ -20,7 +20,7 @@
 /// Bundled combat models take six floats (`CombatSample.INPUT_SIZE`).
 pub const INPUT_SIZE: usize = 6;
 
-/// Degrees to `(-180, 180]`, what `Mth.wrapDegrees` / `Rotation.angleDifference` do.
+/// Degrees to `-180..180`, what `Mth.wrapDegrees` / `Rotation.angleDifference` do.
 pub fn wrap(degrees: f32) -> f32 {
     ((degrees + 180.0) % 360.0 + 360.0) % 360.0 - 180.0
 }
@@ -65,7 +65,7 @@ pub fn usable(input: &[f32]) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{features, usable, wrap, Situation, INPUT_SIZE};
+    use super::{INPUT_SIZE, Situation, features, usable, wrap};
 
     fn situation() -> Situation {
         Situation {
@@ -84,7 +84,10 @@ mod tests {
     }
 
     fn close(expected: f32, actual: f32, what: &str) {
-        assert!((expected - actual).abs() < 1.0e-4, "{what}: expected {expected}, got {actual}");
+        assert!(
+            (expected - actual).abs() < 1.0e-4,
+            "{what}: expected {expected}, got {actual}"
+        );
     }
 
     #[test]
@@ -112,7 +115,11 @@ mod tests {
         close(3.0, f[1], "deltaPitch current->target");
         close(5.0, f[2], "deltaYaw previous->current");
         close(2.0, f[3], "deltaPitch previous->current");
-        close(0.5, f[4], "speed: horizontal player diff plus horizontal target diff");
+        close(
+            0.5,
+            f[4],
+            "speed: horizontal player diff plus horizontal target diff",
+        );
         close(9.0, f[5], "squared distance, already squared");
     }
 
@@ -151,12 +158,18 @@ mod tests {
     #[test]
     fn a_corrupt_situation_has_no_features_at_all() {
         assert_eq!(
-            features(&Situation { current_yaw: f32::NAN, ..situation() }),
+            features(&Situation {
+                current_yaw: f32::NAN,
+                ..situation()
+            }),
             None,
             "a NaN rotation must not become an input"
         );
         assert_eq!(
-            features(&Situation { squared_distance: f32::INFINITY, ..situation() }),
+            features(&Situation {
+                squared_distance: f32::INFINITY,
+                ..situation()
+            }),
             None,
             "an infinite distance must not become an input"
         );

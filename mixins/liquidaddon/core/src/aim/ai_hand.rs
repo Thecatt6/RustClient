@@ -43,25 +43,41 @@ pub fn layer(
     strength_spread: i32,
 ) -> Layer {
     if ai_hand_on && engine_ai {
-        Layer { mouse_noise: mouse_noise.min(1), overshoot: 0, strength_spread: 0 }
+        Layer {
+            mouse_noise: mouse_noise.min(1),
+            overshoot: 0,
+            strength_spread: 0,
+        }
     } else {
-        Layer { mouse_noise, overshoot, strength_spread }
+        Layer {
+            mouse_noise,
+            overshoot,
+            strength_spread,
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{layer, Layer};
+    use super::{Layer, layer};
 
     #[test]
     fn the_ai_engine_keeps_at_most_one_count_of_noise() {
         assert_eq!(
             layer(true, true, 4, 3, 2),
-            Layer { mouse_noise: 1, overshoot: 0, strength_spread: 0 }
+            Layer {
+                mouse_noise: 1,
+                overshoot: 0,
+                strength_spread: 0
+            }
         );
         assert_eq!(
             layer(true, true, 0, 3, 2),
-            Layer { mouse_noise: 0, overshoot: 0, strength_spread: 0 },
+            Layer {
+                mouse_noise: 0,
+                overshoot: 0,
+                strength_spread: 0
+            },
             "a player who removed the noise does not get it back"
         );
     }
@@ -71,15 +87,31 @@ mod tests {
         for mouse_noise in [0, 1, 4] {
             assert_eq!(
                 layer(false, false, mouse_noise, 3, 2),
-                Layer { mouse_noise, overshoot: 3, strength_spread: 2 }
+                Layer {
+                    mouse_noise,
+                    overshoot: 3,
+                    strength_spread: 2
+                }
             );
         }
     }
 
     #[test]
     fn the_switch_needs_both_conditions() {
-        let untouched = Layer { mouse_noise: 4, overshoot: 3, strength_spread: 2 };
-        assert_eq!(layer(true, false, 4, 3, 2), untouched, "AIHand off-engine AI");
-        assert_eq!(layer(false, true, 4, 3, 2), untouched, "engine AI, AIHand off");
+        let untouched = Layer {
+            mouse_noise: 4,
+            overshoot: 3,
+            strength_spread: 2,
+        };
+        assert_eq!(
+            layer(true, false, 4, 3, 2),
+            untouched,
+            "AIHand off-engine AI"
+        );
+        assert_eq!(
+            layer(false, true, 4, 3, 2),
+            untouched,
+            "engine AI, AIHand off"
+        );
     }
 }

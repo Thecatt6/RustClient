@@ -14,4 +14,4 @@
 
 pub mod double_clicks;
 
-pub use double_clicks::{extra_click_action, use_extra_allowed, DoubleClickScheduler, ExtraClick};
+pub use double_clicks::{DoubleClickScheduler, ExtraClick, extra_click_action, use_extra_allowed};

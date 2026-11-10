@@ -1,102 +1,97 @@
 # LiquidAddon — Horizon port (Rust)
 
-A separate Rust rewrite of [Thecatt6/LiquidAddon](https://github.com/Thecatt6/LiquidAddon) for
+A separate Rust port of [Thecatt6/LiquidAddon](https://github.com/Thecatt6/LiquidAddon) for
 [Horizon](https://github.com/horizon-rust/horizon), the Minecraft: Java Edition 26.3 client written
-from scratch in Rust. The original Fabric add-on is left untouched and remains the reference.
+from scratch in Rust. The original Kotlin/Fabric add-on is left untouched and remains the behavior
+reference. This repository is GPL-3.0-only.
 
-Rust and Kotlin do not share a runtime, a `RotationManager` or a `ChatFormatting`, so this is not a
-transliteration of 12 000 lines: it is a port in two halves.
+This is a staged port, not a translation of all of LiquidBounce. The practical scope is the 13
+modules and shared AI/settings/commands used by the pinned LiquidAddon revision; unrelated
+LiquidBounce modules are out of scope. See [`PORTING.md`](PORTING.md) for the hook map and risks.
 
-| Half | Lives in | Holds |
-|---|---|---|
-| **Core** | `crates/liquidaddon-core` | the decisions, with the Kotlin tests they came with: when a follow-up click may fire, how much of an AI answer to trust, when a sequence of mouse steps has become a pattern, what the HUD says |
-| **Bundle** | `mixins/` (not written yet) | the numbers and the effects: read the player's rotation and target, then act through Horizon's hooks or through source mixins |
+## Current status
 
-The split follows the source: half of `LiquidAddon`'s aiming package is already client-free Kotlin
-with its own test file, and those files translate one-to-one. The rest is LiquidBounce plumbing, and
-that has to be rebuilt against Horizon's game state rather than translated.
+**Work in progress; no installable or in-game-validated `.hnmod` yet.** The active slice is the
+client-free **Math branch of `AimEngine.kt`**:
 
-## Status
+- `mixins/liquidaddon/core` contains the Rust workspace crate: rotation/vector maths, AABB and
+  crosshair geometry, target-point selection, held/clamped aim offset, prediction, bubble weight,
+  the stateful Math curve, GCD quantisation, hand layer and cycle guard;
+- `mixins/liquidaddon/horizon-mixin.toml` is a Horizon bundle skeleton. It registers LiquidAddon
+  on Options > Mods and adds a **Rotation mode: Visible/Silent** setting button. Clicks persist to
+  `horizon-mods/.horizon-mod-data/liquidaddon/aim_rotation_mode`; fresh or unknown values default to `Visible`;
+- the mode is a runtime `AimConfig` value, not a compile-time switch. The settings UI and persistence
+  are implemented, but the gameplay aim/controller hook is not: until that adapter consumes the
+  stored mode, toggling the preference does not change player or packet rotations. Silent rotation
+  is not claimed to work.
 
-**The core is ported and tested; there is no installable `.hnmod` yet.** A native mod on Horizon is
-a `horizon-mixin.toml` plus helper `.rs` files that
-[horizon-mixins](https://github.com/horizon-rust/horizon-mixins) compiles into the game's own source,
-pinned to one Horizon commit — that bundle is the next step, and [`PORTING.md`](PORTING.md) maps
-every module to the hooks it needs.
+The source tree currently contains **98 Rust unit tests**: 67 earlier client-free port cases and 31
+new tests for the Math/geometry/settings slice. **They have not been compiled or run in this
+sandbox** because `cargo`, `rustc` and `rustfmt` are unavailable here. Run them with the pinned
+Rust toolchain before treating the slice as verified.
 
-Ported so far, 67 tests, all translated from the Kotlin suite of the same name:
-
-| Core module | Ported from | Tests |
-|---|---|---|
-| `combat::double_clicks` | `modules/doubleclicks/DoubleClickScheduler.kt` | 10 |
-| `aim::hand_gate` | `aiming/HandGate.kt` | 12 |
-| `aim::mouse_pattern_guard` | `aiming/MousePatternGuard.kt` | 7 |
-| `aim::ai_stats` | `aiming/AiStats.kt` | 10 |
-| `aim::ai_reach` | `aiming/AiReach.kt` | 7 |
-| `aim::ai_drift` | `aiming/AiDrift.kt` | 4 |
-| `aim::ai_features` | `aiming/AiFeatures.kt` | 5 |
-| `aim::ai_hand` | `aiming/AiHand.kt` | 3 |
-| `hud::jump_reset` | `modules/jumpreset/JumpResetHud.kt` | 7 |
-| `rng` | (new: a seeded `SplitMix64` for the two places Kotlin took a `Random`) | 2 |
-
-Still to port: `AimEngine.kt` (2 620 lines — the rotation generator itself), the 13 module files,
-the settings/commands, and the model/telemetry plumbing. `PORTING.md` has the order and the reason
-for it.
+The crate lives inside the bundle on purpose: `horizon-mixins` only stages bundle-relative crates,
+and rejects crate paths that escape the bundle. The root Cargo workspace still runs the core tests
+without requiring a game.
 
 ## Layout
 
 ```
-Cargo.toml                     workspace, no dependencies anywhere
-crates/liquidaddon-core/       game-independent logic, `cargo test` runs it
-  src/aim/                     AiDrift, AiFeatures, AiHand, AiReach, AiStats, HandGate, MousePatternGuard
-  src/combat/                  DoubleClickScheduler
-  src/hud/                     JumpReset HUD tag
-  src/rng.rs                   seeded SplitMix64
-mixins/                        the Horizon bundle (horizon-mixin.toml + helpers) — to be written
-compatibility.json             the exact revisions this port targets
-PORTING.md                     hook map, per-module plan, known incompatibilities
+Cargo.toml                         root workspace and minimum Rust version
+rust-toolchain.toml                exact compiler/tooling pin (1.95.0)
+mixins/liquidaddon/
+  horizon-mixin.toml               pinned native bundle; mod/settings hooks
+  register.rs, settings*.rs        Horizon Options > Mods integration
+  core/                             game-independent Rust core and unit tests
+    src/aim/                        AI policy, Math engine, geometry, rotations, settings
+    src/combat/                     double-click scheduler
+    src/hud/                        jump-reset HUD tag
+    src/rng.rs                      deterministic SplitMix64
+compatibility.json                 exact source/target/API pins
+PORTING.md                        hook map, per-module plan and known incompatibilities
 ```
 
-## Running the tests
+## Rotation setting
+
+Open **Options > Mods > LiquidAddon** and click **Rotation mode: Visible** or **Rotation mode:
+Silent**. The native settings hook stores the selected tag using Horizon's persistent setting helper
+under the safe one-file key `aim_rotation_mode`. Visible is the default and the fail-open value for
+unrecognized tags. The core exposes `RotationMode` through `AimConfig` at runtime; the remaining
+rotation adapter must still apply that choice to a real gameplay path.
+
+## Tests and checks
+
+From the repository root, with Rust 1.95.0 installed:
 
 ```sh
-cargo test --workspace          # 67 tests, no game, no network, no dependencies
+cargo test --workspace
 cargo fmt --all --check
 cargo clippy --workspace --all-targets
 ```
 
-The crate is `std`-only and dependency-free on purpose: it has to stay testable here, and the
-eventual bundle should not add a Cargo graph to every player's build. Rust **1.95.0** is pinned
-(`rust-version`), the same toolchain horizon-mixins and Horizon use.
+For the bundle, use the pinned Horizon checkout and its `horizon-mixins` revision:
 
-## Pins
+```sh
+horizon-mixins plan --workspace /path/to/horizon --mods mixins --out plan.json
+horizon-mixins check --workspace /path/to/horizon --mods mixins \
+  --out target/liquidaddon-check --trust-native-mods
+```
 
-[`compatibility.json`](compatibility.json):
+A successful plan/check is still not an in-game test. In particular, visible rotation needs a real
+rotation application hook, and silent rotation needs packet recording to prove that the camera and
+server-facing rotation stay correctly separated.
 
-- Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`, with its default `horizon-mixins`
-  `5a64af938ec86b00d53d16a408aabc0038fb3e57`;
-- source `Thecatt6/LiquidAddon` `c128aaf0ffb98a815661d24381d1f548508e0b80`, GPL-3.0-only, the
-  licence this port keeps.
+## Pins and scope
 
-## Before you install it anywhere
+[`compatibility.json`](compatibility.json) pins Horizon `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`,
+`horizon-mixins` `5a64af938ec86b00d53d16a408aabc0038fb3e57`, Minecraft 26.3, Rust 1.95.0, and the
+LiquidAddon source commit `c128aaf0ffb98a815661d24381d1f548508e0b80`.
 
-Horizon ships no auto-clicking, no aim assist and no wall-hack of its own, and its
-[`pvp.md`](https://github.com/horizon-rust/horizon/blob/main/docs/pvp.md) says why: those features
-would stop a fresh install from being welcome on ordinary servers. A native mod can still do all of
-it — it is native code with the player's rights, always on, and not sandboxed — which is exactly why
-the launcher shows a trust notice and the registry reviews a mod before listing it. Nothing in this
-repository changes what a server allows: check the rules of the server you play on before you run
-any of this, and keep the modules off anywhere they are not permitted.
+Still to do: compile and verify this slice; connect the Math engine to Horizon target/player state
+and rotation hooks; then port the inference/training/model `.params` branch, remaining shared AI,
+the 13 module behaviors, settings/commands, and their tests. The user-facing Visible/Silent choice
+must remain persistent and GUI-editable throughout that integration.
 
-## Port order
-
-1. **Ported:** the client-free Kotlin — schedulers, gates, formatters, the AI policy around the
-   model.
-2. Settings/state on the Horizon side, plus the typed `Host` helpers the bundle needs (`player`,
-   `entity_*`, `raycast`, `view_hit`, `held`).
-3. The rotation path — the one thing Horizon does not expose as a hook (see
-   [`PORTING.md`](PORTING.md#the-rotation-problem)) — then `AimEngine`, `Aimassist`, `AimbotAI`.
-4. The combat and projectile modules, in the groups `PORTING.md` lists, each with the vanilla path
-   it replaces preserved where the source does.
-5. Package a `.hnmod` against the pins, build it with `horizon-mixins`, and test it in the matching
-   launcher build.
+Before using any feature, check the rules of the server you play on. Horizon's native mods are
+native code with the player's rights and are not sandboxed; this project does not make a server allow
+anything its rules prohibit.

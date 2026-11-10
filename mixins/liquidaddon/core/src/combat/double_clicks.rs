@@ -107,7 +107,7 @@ pub fn use_extra_allowed(
 
 #[cfg(test)]
 mod tests {
-    use super::{extra_click_action, use_extra_allowed, DoubleClickScheduler, ExtraClick};
+    use super::{DoubleClickScheduler, ExtraClick, extra_click_action, use_extra_allowed};
 
     #[test]
     fn one_to_three_extras_follow_the_original_on_later_ticks() {

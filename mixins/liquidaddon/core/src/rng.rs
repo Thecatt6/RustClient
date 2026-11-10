@@ -45,6 +45,11 @@ impl SplitMix64 {
         (self.next_u64() >> 40) as f32 / 16_777_216.0
     }
 
+    /// A value in `[0, 1)`, with 53 random bits for dither thresholds in `f64`.
+    pub fn next_f64(&mut self) -> f64 {
+        (self.next_u64() >> 11) as f64 / 9_007_199_254_740_992.0
+    }
+
     /// A coin, from the top bit of a fresh draw.
     pub fn next_bool(&mut self) -> bool {
         self.next_u64() >> 63 != 0
@@ -71,6 +76,9 @@ mod tests {
         let mut a = SplitMix64::new(1);
         let mut b = SplitMix64::new(2);
         let differing = (0..64).filter(|_| a.next_u64() != b.next_u64()).count();
-        assert!(differing > 55, "the two streams are too similar: {differing}");
+        assert!(
+            differing > 55,
+            "the two streams are too similar: {differing}"
+        );
     }
 }

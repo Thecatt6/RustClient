@@ -89,10 +89,13 @@ pub fn movement_counts(own_yaw: f32, own_pitch: f32, gcd: f32) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{movement_counts, HandGate};
+    use super::{HandGate, movement_counts};
 
     fn close(expected: f32, actual: f32) {
-        assert!((expected - actual).abs() < 1.0e-5, "expected {expected}, got {actual}");
+        assert!(
+            (expected - actual).abs() < 1.0e-5,
+            "expected {expected}, got {actual}"
+        );
     }
 
     #[test]
