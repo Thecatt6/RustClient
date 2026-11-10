@@ -1,0 +1,9 @@
+{
+  "source_repository": "https://github.com/Thecatt6/LiquidAddon",
+  "source_revision": "c128aaf0ffb98a815661d24381d1f548508e0b80",
+  "horizon_repository": "https://github.com/horizon-rust/horizon",
+  "horizon_revision": "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca",
+  "horizon_mixins_repository": "https://github.com/horizon-rust/horizon-mixins",
+  "horizon_mixins_revision": "5a64af938ec86b00d53d16a408aabc0038fb3e57",
+  "minecraft_version": "26.3"
+}
