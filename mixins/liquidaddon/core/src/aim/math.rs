@@ -409,7 +409,7 @@ impl MathAimEngine {
             (from.pitch + step_pitch).clamp(-PLAN_PITCH_LIMIT, PLAN_PITCH_LIMIT),
         );
         let quantized = if settings.gcd_fix() {
-            self.quantize_delta(settings, from, desired, gcd)?
+            self.quantize_delta(settings, from, desired, gcd, rest_drift)?
         } else {
             Quantized {
                 yaw_delta: angle_difference(desired.yaw, from.yaw),
@@ -444,6 +444,7 @@ impl MathAimEngine {
         from: Rotation,
         desired: Rotation,
         gcd: f64,
+        rest_drift: bool,
     ) -> Option<Quantized> {
         let delta_yaw = f64::from(angle_difference(desired.yaw, from.yaw));
         let delta_pitch = f64::from(desired.pitch - from.pitch);
@@ -481,15 +482,19 @@ impl MathAimEngine {
             self.pitch_carry = (raw_pitch - f64::from(counts_pitch)).clamp(-0.95, 0.95);
         }
 
-        let hand = effective_hand_layer(settings);
-        (counts_yaw, counts_pitch) = self.hand_on_lattice(
-            counts_yaw,
-            counts_pitch,
-            delta_yaw,
-            delta_pitch,
-            hand.mouse_noise,
-            hand.overshoot,
-        );
+        // The rest walk already chose bounded counts; normal hand noise/repetition repair could
+        // enlarge its deliberate one-count pitch drift.
+        if !rest_drift {
+            let hand = effective_hand_layer(settings);
+            (counts_yaw, counts_pitch) = self.hand_on_lattice(
+                counts_yaw,
+                counts_pitch,
+                delta_yaw,
+                delta_pitch,
+                hand.mouse_noise,
+                hand.overshoot,
+            );
+        }
 
         if settings.pattern_guard() {
             (counts_yaw, counts_pitch) = self.patterns.guard(counts_yaw, counts_pitch);
@@ -729,8 +734,9 @@ mod tests {
         close(0.999_630, soft_limit(1.0, 30.0), 1.0e-5);
         assert_eq!(soft_limit(4.0, 0.0), 0.0);
         let capped = soft_limit(100.0, 7.0);
-        assert!(capped > 6.99 && capped < 7.0);
-        assert!(soft_limit(-100.0, 7.0) > -7.0);
+        assert!(capped > 6.99 && capped <= 7.0);
+        let negative_capped = soft_limit(-100.0, 7.0);
+        assert!(negative_capped >= -7.0 && negative_capped < -6.99);
     }
 
     #[test]

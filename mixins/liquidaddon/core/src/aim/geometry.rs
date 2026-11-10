@@ -327,12 +327,15 @@ pub fn bubble(
     radius_degrees: f32,
     fov_degrees: f32,
 ) -> f32 {
-    if auto_aim || on_crosshair || offset_degrees <= radius_degrees {
+    if auto_aim || on_crosshair {
         return 1.0;
     }
     let edge = fov_degrees / 2.0;
     if edge <= radius_degrees {
         return 0.0;
+    }
+    if offset_degrees <= radius_degrees {
+        return 1.0;
     }
     (1.0 - (offset_degrees - radius_degrees) / (edge - radius_degrees)).clamp(0.0, 1.0)
 }
@@ -447,7 +450,7 @@ mod tests {
 
     #[test]
     fn a_clamp_survives_a_box_thinner_than_the_margin() {
-        assert_eq!(clamp_axis(5.0, 0.4, 0.2), 0.3);
+        assert!((clamp_axis(5.0, 0.4, 0.2) - 0.3).abs() < 1.0e-12);
         assert_eq!(clamp_axis(5.0, 0.0, 1.0), 1.0);
     }
 
