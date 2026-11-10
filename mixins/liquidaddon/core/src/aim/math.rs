@@ -16,7 +16,7 @@ use crate::rng::SplitMix64;
 
 use super::ai_hand;
 use super::geometry::{Aabb, AimOffset};
-use super::hand_gate::HandGate;
+use super::hand_gate::{HandGate, movement_counts};
 use super::mouse_pattern_guard::MousePatternGuard;
 use super::rotation::{PLAN_PITCH_LIMIT, Rotation, WRITE_PITCH_LIMIT, angle_difference};
 use super::settings::{AiHandMode, AimSettings, Engine, Mode, Smoothing};
@@ -257,7 +257,7 @@ impl MathAimEngine {
         now_ms: u64,
     ) -> HandObservation {
         self.refresh_hand_profile(now_ms);
-        let counts = HandGate::movement_counts(own_yaw, own_pitch, gcd as f32);
+        let counts = movement_counts(own_yaw, own_pitch, gcd as f32);
         let share = if settings.hand_only() {
             self.hand_gate
                 .update(counts, settings.hand_threshold(), settings.hand_fade())
@@ -675,7 +675,7 @@ fn random_below(rng: &mut SplitMix64, exclusive: u32) -> u32 {
 mod tests {
     use super::{MathAimEngine, MathAimInput, shape, soft_limit};
     use crate::aim::rotation::{DEFAULT_PITCH_STEP_MAX, Rotation};
-    use crate::aim::settings::{AimConfig, AimSettings, Mode, RotationMode, Smoothing};
+    use crate::aim::settings::{AimConfig, Mode, RotationMode, Smoothing};
 
     fn close(expected: f32, actual: f32, tolerance: f32) {
         assert!(

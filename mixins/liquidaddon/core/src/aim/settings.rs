@@ -21,7 +21,8 @@ use super::rotation::DEFAULT_PITCH_STEP_MAX;
 pub const ROTATION_MODE_KEY: &str = "aim_rotation_mode";
 
 macro_rules! tagged_enum {
-    ($name:ident { $($variant:ident => $tag:literal),+ $(,)? }) => {
+    ($(#[$attr:meta])* $name:ident { $($variant:ident => $tag:literal),+ $(,)? }) => {
+        $(#[$attr])*
         #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
         pub enum $name {
             $($variant),+
@@ -116,9 +117,10 @@ tagged_enum!(Preset {
     ProfileB => "Profile B",
 });
 
-/// Where a computed rotation is applied. Unlike the source's `Silent` boolean, this is a named
-/// choice and is editable at runtime from the native mod settings page.
-tagged_enum!(RotationMode {
+tagged_enum!(
+    /// Where a computed rotation is applied. Unlike the source's `Silent` boolean, this is a named
+    /// choice and is editable at runtime from the native mod settings page.
+    RotationMode {
     Visible => "Visible",
     Silent => "Silent",
 });
