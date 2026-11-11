@@ -1,10 +1,10 @@
-//! Game-independent core of the LiquidAddon port.
+//! Game-independent core of RustClient, an independent Rust rewrite for Horizon.
 //!
-//! The client-free policies here are ported from the pinned Kotlin source, and the Math slice
-//! re-expresses the relevant part of `AimEngine.kt` without Horizon, LiquidBounce or Minecraft
-//! types. This crate is nested inside the Horizon bundle so horizon-mixins can stage it without an
-//! out-of-bundle path dependency; the repository root Cargo workspace still tests it independently
-//! of the game.
+//! The client-free policies reimplement selected behaviors from the pinned Kotlin reference, and
+//! the Math slice reconstructs the relevant part of `AimEngine.kt` without Horizon, LiquidBounce or
+//! Minecraft types. This crate is nested inside the Horizon bundle so horizon-mixins can stage it
+//! without an out-of-bundle path dependency; the repository root Cargo workspace still tests it
+//! independently of the game.
 //!
 //! * **This crate** holds decisions and arithmetic: aim geometry and curves, AI policy helpers,
 //!   mouse gates and pattern repair, click scheduling, settings vocabulary and HUD formatting.
@@ -14,7 +14,7 @@
 //!
 //! # Layout
 //!
-//! | Module | Ported from | Kind |
+//! | Module | Behavioral reference | Kind |
 //! |---|---|---|
 //! | [`aim::ai_drift`] | `aiming/AiDrift.kt` | pure policy |
 //! | [`aim::ai_features`] | `aiming/AiFeatures.kt` | pure mapping |
@@ -31,7 +31,7 @@
 //! | [`hud::jump_reset`] | `modules/jumpreset/JumpResetHud.kt` | pure formatter |
 //!
 //! The trained-model branch, complete target/event lifecycle, live Horizon adapter, other module
-//! behavior and commands remain to be ported; see the repository's `PORTING.md` for the plan.
+//! behavior and commands remain to be implemented in RustClient; see `PORTING.md` for the plan.
 
 #![forbid(unsafe_code)]
 

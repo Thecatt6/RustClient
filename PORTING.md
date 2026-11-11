@@ -1,14 +1,14 @@
-# Porting notes
+# RustClient rewrite notes
 
 Everything below was checked against the pinned Horizon checkout
-(`fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`) and the pinned LiquidAddon commit
-(`c128aaf0ffb98a815661d24381d1f548508e0b80`). Where something is still a guess it says so.
+(`fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`) and the upstream behavior reference,
+Thecatt6/LiquidAddon at revision `c128aaf0ffb98a815661d24381d1f548508e0b80`. Any remaining guesses are identified.
 
 ## Pins
 
 | Thing | Revision |
 |---|---|
-| Source | `Thecatt6/LiquidAddon` `c128aaf0ffb98a815661d24381d1f548508e0b80` (GPL-3.0-only) |
+| Behavior reference | `Thecatt6/LiquidAddon` `c128aaf0ffb98a815661d24381d1f548508e0b80` (GPL-3.0-only) |
 | Target | `horizon-rust/horizon` `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca` |
 | Mixins | `horizon-rust/horizon-mixins` `5a64af938ec86b00d53d16a408aabc0038fb3e57` (the default that Horizon commit declares) |
 | Game | Minecraft: Java Edition 26.3 |
@@ -16,21 +16,22 @@ Everything below was checked against the pinned Horizon checkout
 
 ## Current implementation status
 
-The active slice is the client-free `Engine = Math` path, not the complete `AimEngine` lifecycle.
-`mixins/liquidaddon/core` currently contains rotation and AABB geometry, point selection, prediction,
-the held in-box offset, the exact LiquidBounce 0.42.0 max-cosine crosshair angle, bubble weight, the
+The current RustClient rewrite slice is the client-free `Engine = Math` path, not the complete
+`AimEngine` lifecycle. `mixins/rustclient/core` currently contains rotation and AABB geometry, point
+selection, prediction, the held in-box offset, the exact LiquidBounce 0.42.0 max-cosine crosshair
+angle, bubble weight, the
 Math curve, hand gate/layer, GCD quantiser and pattern guard. The trained-model branch, target
 selection/reaction lifecycle, Minecraft snapshots and rotation application remain future work.
 
-The bundle at `mixins/liquidaddon` registers the mod and exposes `RotationMode` through Horizon's
-Options > Mods > LiquidAddon settings button. The value is saved under
-`horizon-mods/.horizon-mod-data/liquidaddon/aim_rotation_mode`, defaults to `Visible`, and is represented in the
-core as a runtime `AimConfig` field. The preference is not yet connected to a gameplay rotation hook;
-no in-game aim or silent rotation is claimed.
+The bundle at `mixins/rustclient` registers **RustClient** and exposes `RotationMode` through
+Horizon Options > Mods > RustClient. The value is saved under
+`horizon-mods/.horizon-mod-data/rustclient/aim_rotation_mode`, defaults to `Visible`, and is
+represented in the core as a runtime `AimConfig` field. The preference is not yet connected to a
+gameplay rotation hook; no in-game aim or silent rotation is claimed.
 
-There are 98 Rust test cases in the source tree (67 earlier core cases plus 31 Math/geometry/settings
-cases). They have **not** been compiled or run in this sandbox because `cargo`, `rustc` and
-`rustfmt` are absent. The user has a local toolchain to perform those checks.
+There are 98 Rust test cases in the source tree (67 existing client-free core cases plus 31
+Math/geometry/settings cases). They have **not** been compiled or run in this sandbox because
+`cargo`, `rustc` and `rustfmt` are absent. The user has a local toolchain to perform those checks.
 
 The core crate is nested inside the bundle because horizon-mixins stages bundle-relative crates and
 rejects paths that escape the bundle. The root Cargo workspace includes it, so the client-free tests
@@ -45,7 +46,7 @@ compiled *inside* the target function, so they see private fields and can bind `
 
 ```toml
 [mod]
-id = "liquidaddon"
+id = "rustclient"
 version = "0.1.0"
 priority = 100
 
@@ -65,7 +66,7 @@ Injection kinds available at that revision: `HEAD` (and cancellable `HEAD`), `BE
 every other hook on the same function, so prefer `HEAD`/`RETURN`. Several hooks ride the same
 function: same site runs priority-descending, mod id, then injection id.
 
-Two more facts that shape the port:
+Two more facts that shape the RustClient rewrite:
 
 - **API gating.** A bundle that uses a named hook declares its API numbers (`"hooks": [138, 360]`)
   in its `.hnmod`'s `horizon-native.json`; the launcher refuses a bundle whose hooks the pinned
@@ -78,7 +79,8 @@ Two more facts that shape the port:
 
 ## The rotation problem
 
-This is the single decision the whole aim half of the port hangs on, so it comes before the modules.
+This is the single decision the whole aim half of the RustClient rewrite hangs on, so it comes
+before the modules.
 
 Horizon has **no hook that writes the player's rotation**. What it has:
 
@@ -105,8 +107,8 @@ What the client actually sends is one `(yaw, pitch)` pair. In the pinned source 
    not ship silent aim on the strength of "the tests pass"; prove it with the launcher's packet
    recording.
 
-Either way the mixin is pinned to a private method of `Game`, so it is the most fragile target in
-the port. Put it behind one module (`rotation`) with a version check and a build that fails loudly,
+Either way the mixin is pinned to a private method of `Game`, making it RustClient's most fragile
+target. Put it behind one module (`rotation`) with a version check and a build that fails loudly,
 rather than sprinkling `self.yaw = …` through the modules.
 
 ## Verified hook map (client side)
@@ -146,50 +148,52 @@ Client-side reads the bundle can use without a hook (`Host` helpers, documented 
 
 LiquidBounce is a whole client — roughly 300 k lines of Kotlin across a module/settings framework, a
 click GUI, an event bus, a rotation manager, HUD/element renderers, commands, config serialisation
-and the deep-learning engine — and this add-on is a thin layer on top of it. Porting "everything" is
-not one job, and it is not what the 13 modules need. The realistic dependency list, in the order the
-add-on actually touches them:
+and the deep-learning engine. The upstream LiquidAddon add-on is a thin layer on top of it.
+Recreating "everything" is not one job, and it is not what RustClient needs for its selected
+behaviors. The realistic dependency list follows the order the source add-on actually uses them:
 
-| LiquidBounce primitive | What the add-on uses it for | Where it lands here |
+| LiquidBounce primitive | Upstream use | RustClient implementation path |
 |---|---|---|
 | `Module` / `Toggleable` / `Choice` settings | every module's state | Horizon-side settings struct + the enums from `AimEngine.kt` |
 | `RotationManager` | aim assist, hit flick, scaffold | the rotation mixin described above |
 | `EventBus` + `EventMotion`/`EventAttack` | module hooks | Horizon's typed hooks, no bus |
-| `CombatSample` / `DeepLearningEngine` / `.params` models | `AimbotAI`, `AutoPearlAI` | future Rust inference + [the input order](mixins/liquidaddon/core/src/aim/ai_features.rs) |
-| `CommandRegistrar`, chat formatting, `ClickGUI` | `/liquidaddon`, HUD tags | `Host::send_chat` / a mod screen; the HUD tags are plain strings already |
+| `CombatSample` / `DeepLearningEngine` / `.params` models | `AimbotAI`, `AutoPearlAI` | future Rust inference + [the input order](mixins/rustclient/core/src/aim/ai_features.rs) |
+| `CommandRegistrar`, chat formatting, `ClickGUI` | upstream `/liquidaddon`, HUD tags | future RustClient `/rustclient` command via `Host::send_chat` / a mod screen; HUD tags are plain strings |
 
 Everything else in LiquidBounce (its own KillAura, Scaffold, Disabler, exploits…) is out of scope
-unless a module here depends on it. A useful rule for this repository: *if the pinned LiquidAddon
-does not call it, it is not part of the port.*
+unless a selected RustClient behavior depends on it. A useful rule for this rewrite: *if the pinned
+upstream behavior reference does not use it, it is not part of RustClient.*
 
 ## Module-by-module plan
 
-The client-free core currently lives in `mixins/liquidaddon/core`; the per-module status below distinguishes that work from the still-unported adapters and behaviors.
+The client-free core lives in `mixins/rustclient/core`. The status below distinguishes implemented
+RustClient logic from adapters and behaviors that remain to be implemented.
 
 | Module (source) | Core | Client-side path | Notes / risks |
 |---|---|---|---|
-| `DoubleClicks` (226 l.) | ✅ `combat::double_clicks` | `interaction_key` (138): replay the planned follow-up through the vanilla path; keep `swing_hand`/`canceled` rules | Whole scheduling policy already ported; the bundle only supplies "over an entity / mining / miss cooldown" and performs the click |
+| `DoubleClicks` (226 l.) | ✅ `combat::double_clicks` | `interaction_key` (138): replay the planned follow-up through the vanilla path; keep `swing_hand`/`canceled` rules | Whole scheduling policy already reimplemented in Rust; the bundle only supplies "over an entity / mining / miss cooldown" and performs the click |
 | `HitSelect` (101 l.) | — | `interaction_key` (138) to defer/allow an attack; target hurt state from `entity_*` or from `client_packet` (408) | Needs a client-side hurt signal; check whether a helper exposes it before parsing packets |
 | `JumpReset` (385 l.) | ✅ `hud::jump_reset` | knockback arrival from `client_packet` (408, `SetEntityMotion` for the local player) and the jump from `movement_input` (360) | Clean mapping: the original keys off receiving knockback and answering on the exact tick |
-| `BlockHit` (705 l.) | — | `interaction_key` (138) + `movement_input` (360) + `held` | The original drives sword-block timing; 26.3 has shields, so verify the item semantics before porting the branches |
+| `BlockHit` (705 l.) | — | `interaction_key` (138) + `movement_input` (360) + `held` | The original drives sword-block timing; 26.3 has shields, so verify the item semantics before implementing the Rust behavior |
 | `TriggerBotPlus` (959 l.) | — | `interaction_key` (138) + `raycast`/`view_hit` + `entity_*` | Everything it needs exists client-side; the hard part is the filter policy, not the hooks |
 | `HitFlick` (722 l.) | — | the rotation path above | Needs the aim core running first |
 | `Aimassist` / `AimbotAI` (115 + 102 l. over `AimEngine.kt` 2 620 l.) | partial: `aim::math`, geometry, rotations, settings, `ai_*`, `hand_gate`, `mouse_pattern_guard` | rotation path above + `player`/`entity_*` | Math policy and runtime Visible/Silent preference exist; target selection, full tick lifecycle, gameplay rotation application, AI inference and registry remain |
-| `AutoPearlAI` (1 474 l.) | — | `held`/`living_hand_item` + `entity_*` + rotation path; projectile maths is plain Rust | Trajectory + inventory choice can be ported and tested as core; keep it out of the bundle |
+| `AutoPearlAI` (1 474 l.) | — | `held`/`living_hand_item` + `entity_*` + rotation path; projectile maths is plain Rust | Trajectory + inventory choice can be implemented and tested in the Rust core; keep it out of the bundle |
 | `FireballDeflect` (297 l.) | — | `entity_*` for the projectile + `interaction_key` (138) for the swing | Raycast/trajectory maths belongs in core |
 | `FireballJumpAI` (835 l.) | — | `entity_*` + `movement_input` (360) + rotation path | Same split as above |
 | `ScaffoldLegit` (442 l.) | — | `movement_input` (360), `held`, `block_collision`; placement itself needs a mixin into the client's block-place path | Placement prediction is the open question; start with the "where" (core) and leave the "place" last |
-| `FakeLagV2` (1 013 l.) | — | **blocked as designed** | `client_packet` only observes inbound, and `send_packet` adds packets rather than holding the game's own back. A real port needs a mixin at the send site (`PositionSender`/`send`) plus a queue with a tick budget — or the module is dropped. Do not fake it with duplicated packets |
+| `FakeLagV2` (1 013 l.) | — | **blocked as designed** | `client_packet` only observes inbound, and `send_packet` adds packets rather than holding the game's own back. This feature needs a mixin at the send site (`PositionSender`/`send`) plus a queue with a tick budget — or the module is dropped. Do not fake it with duplicated packets |
 
 ### What the aim engine needs beyond the hooks
 
 `AimEngine.kt` calls LiquidBounce's `DeepLearningEngine` with bundled `.params` models. On Horizon
-that remains separate work: read the model format, run the forward pass in Rust (six inputs,
-[`ai_features`](mixins/liquidaddon/core/src/aim/ai_features.rs) already pins the order), and feed
-[`ai_stats`](mixins/liquidaddon/core/src/aim/ai_stats.rs) so `/liquidaddon ai` keeps saying the same
-thing. The current first slice ports the client-free `Engine = Math` policy (Profile A's curve), not
-the model branch or the complete `AimassistCore` lifecycle; the AI policies already encode how much
-of a model to trust once inference is added.
+that remains separate work: read the model format and run the forward pass in Rust (six inputs;
+[`ai_features`](mixins/rustclient/core/src/aim/ai_features.rs) already pins their order). Feed the
+result into [`ai_stats`](mixins/rustclient/core/src/aim/ai_stats.rs), whose snapshots can power a
+future `/rustclient ai` command while preserving the reference telemetry. The current RustClient
+slice reimplements the client-free `Engine = Math` policy (Profile A's curve), not the model branch
+or the complete `AimassistCore` lifecycle; the AI policies already encode how much of a model to
+trust once inference is added.
 
 ## How to verify
 
@@ -199,7 +203,7 @@ of a model to trust once inference is added.
    `horizon-mixins plan --workspace <horizon> --mods mixins --out plan.json`, then
    `horizon-mixins check --workspace <horizon> --mods mixins --out <stage> --trust-native-mods`.
    The bundle crate and hooks must compile against the pinned workspace before it is called ready.
-3. In Horizon, open Options > Mods > LiquidAddon, switch Visible/Silent, reopen the page and restart
+3. In Horizon, open Options > Mods > RustClient, switch Visible/Silent, reopen the page and restart
    the client to verify the persisted value. This checks the setting UI only; the gameplay controller
    is still to be connected.
 4. In-game, test each implemented module with packet recording enabled. Visible rotation needs its
@@ -210,8 +214,8 @@ of a model to trust once inference is added.
 - **Rotation delivery.** The Visible/Silent preference is persistent and GUI-editable, defaulting to
   Visible. It is not yet wired to gameplay. Start with the visible path; only enable silent delivery
   after a packet recording proves the pinned hook's ordering.
-- **One bundle or several.** One `liquidaddon` bundle with API-gated injections is simpler to pin;
-  a `liquidaddon-aim` / `liquidaddon-combat` split lets a player take the harmless half.
+- **One bundle or several.** One `rustclient` bundle with API-gated injections is simpler to pin;
+  a `rustclient-aim` / `rustclient-combat` split lets a player take the harmless half.
 - **1.8-style clicks against 26.3 rules.** `DoubleClicks`/`TriggerBotPlus` exist to beat a cooldown
-  that 26.3 servers police by CPS and rotation checks; the port should keep the original's caps and
-  say so in its own docs, not silently raise them.
+  that 26.3 servers police by CPS and rotation checks; the RustClient rewrite should keep the
+  reference's caps and say so in its own docs, not silently raise them.

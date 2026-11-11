@@ -1,6 +1,6 @@
 //! Rotations and the small amount of vector maths the aim path needs.
 //!
-//! Ported from the `Rotation`/`Vec3`/`RotationUtil` uses in `AimEngine.kt` and from what
+//! Reimplemented from the `Rotation`/`Vec3`/`RotationUtil` uses in `AimEngine.kt` and from what
 //! LiquidBounce's `Rotation` does, but written out here so the core keeps its "no game types" rule.
 //!
 //! Two conventions have to match the game exactly, because they end up in a packet:

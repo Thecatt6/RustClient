@@ -1,5 +1,5 @@
-//! The telemetry behind `/liquidaddon ai`: one session of the aiming core under `Engine = AI`,
-//! reduced to the numbers that say whether the model is really driving.
+//! The telemetry for a future `/rustclient ai` command: one session of the aiming core under
+//! `Engine = AI`, reduced to the numbers that say whether the model is really driving.
 //!
 //! Pure on purpose — counters, two step traces and a formatter, no client, no module, no rotation —
 //! so the line a player reads in chat is the same line a test asserts:

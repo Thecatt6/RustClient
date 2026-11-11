@@ -1,0 +1,14 @@
+[package]
+name = "rustclient-core"
+description = "Game-independent core of RustClient, informed by Thecatt6/LiquidAddon behavior and free of Horizon and LiquidBounce types"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "GPL-3.0-only"
+publish = false
+
+[lib]
+name = "rustclient_core"
+path = "src/lib.rs"
+
+[dependencies]

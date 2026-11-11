@@ -2,7 +2,7 @@
 //!
 //! The Kotlin sources take a `kotlin.random.Random` in the two places where a decision must not
 //! have a fixed beat ([`crate::aim::mouse_pattern_guard`] and the noise of the aim lattice). Kotlin
-//! tests seed it (`Random(11)`), and the Rust tests must do the same, so the port cannot depend on
+//! tests seed it (`Random(11)`), and the Rust tests do the same, so the rewrite cannot depend on
 //! `rand`: this crate has no dependencies at all, which also keeps the eventual bundle free of a
 //! Cargo graph the launcher has to build.
 //!
@@ -13,7 +13,7 @@
 /// SplitMix64, seeded explicitly.
 ///
 /// ```
-/// use liquidaddon_core::SplitMix64;
+/// use rustclient_core::SplitMix64;
 ///
 /// let mut rng = SplitMix64::new(1);
 /// let a: f32 = rng.next_f32();

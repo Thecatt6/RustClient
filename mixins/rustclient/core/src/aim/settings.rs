@@ -5,7 +5,7 @@
 //! does not know about Horizon's `Game`, file paths, GUI batches or key events.
 //!
 //! The user-facing rotation choice is [`RotationMode`], not a build-time flag. The Horizon bundle
-//! persists it under [`ROTATION_MODE_KEY`] and exposes it as a button on Options > Mods > LiquidAddon.
+//! persists it under [`ROTATION_MODE_KEY`] and exposes it as a button on Options > Mods > RustClient.
 //! The core can compute a step without deciding whether it is written to the camera or only to the
 //! outgoing rotation: applying that step is the rotation adapter's job.
 
@@ -16,7 +16,7 @@ use super::rotation::DEFAULT_PITCH_STEP_MAX;
 /// The setting file name stored by Horizon's `setting` / `set_setting` helpers.
 ///
 /// It is deliberately a single safe filename component: Horizon stores one setting per file in
-/// `horizon-mods/.horizon-mod-data/liquidaddon/` and does not create nested parents for keys
+/// `horizon-mods/.horizon-mod-data/rustclient/` and does not create nested parents for keys
 /// containing `/`.
 pub const ROTATION_MODE_KEY: &str = "aim_rotation_mode";
 

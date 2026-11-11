@@ -1,17 +1,18 @@
 //! Aim and AI helpers: the parts of `aiming/` that decide, measure or format.
 //!
-//! The client-free part of `AimEngine.kt` is being ported in layers. The current Math slice owns
+//! The client-free behavior from `AimEngine.kt` is being reimplemented in
+//! RustClient in layers. The current Math slice owns
 //! the rotation and hitbox arithmetic, settings vocabulary, curve step, humanized GCD lattice and
 //! cycle guard; Horizon will still supply player/entity snapshots and apply the returned rotation.
 //! The trained-model branch and complete target/event lifecycle are later slices (see `PORTING.md`).
 //!
-//! | Module | Ported from | Shape |
+//! | Module | Behavioral reference | Shape |
 //! |---|---|---|
 //! | [`ai_drift`] | `AiDrift.kt` | pure policy: how much of a drifted model to trust |
 //! | [`ai_features`] | `AiFeatures.kt` | pure mapping: the model's six inputs |
 //! | [`ai_hand`] | `AiHand.kt` | pure policy: what the hand layer keeps under the model |
 //! | [`ai_reach`] | `AiReach.kt` | pure policy: how far outside training to trust the model |
-//! | [`ai_stats`] | `AiStats.kt` | counters, the correlation window, the `/liquidaddon ai` line |
+//! | [`ai_stats`] | `AiStats.kt` | counters, the correlation window, future `/rustclient ai` telemetry |
 //! | [`geometry`] | `AimEngine.kt` | hitbox points, crosshair ray and assist bubble |
 //! | [`hand_gate`] | `HandGate.kt` | stateful gate: an assist only helps a moving hand |
 //! | [`math`] | `AimEngine.kt`, Engine=Math | Bezier/sigmoid curve, speed cap, GCD lattice and hand layer |
@@ -20,7 +21,7 @@
 //! | [`settings`] | `AimEngine.kt` | `AimSettings`, tagged values and persisted GUI rotation mode |
 //!
 //! The split is not cosmetic. Each of these files was already client-free in Kotlin, with its own
-//! test file, precisely so the policy could be argued about without a game; the port keeps that
+//! test file, precisely so the policy could be argued about without a game; RustClient keeps that
 //! property, which is what lets `cargo test` say something true about a module that cannot run
 //! outside Horizon.
 

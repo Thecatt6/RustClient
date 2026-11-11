@@ -1,4 +1,5 @@
 {
+  "project": "RustClient",
   "source_repository": "https://github.com/Thecatt6/LiquidAddon",
   "source_revision": "c128aaf0ffb98a815661d24381d1f548508e0b80",
   "license": "GPL-3.0-only",

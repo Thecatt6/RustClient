@@ -5,7 +5,7 @@
 //! of one formula and need a hand painted on top. A model trained on recorded human ticks does not
 //! need that paint: its answer already carries the wobble, the sloppy counts and the varied pull of
 //! the hand it learned from, and the layer on top does not add humanity — it bends an authored step
-//! into a different one (and the telemetry of `/liquidaddon ai` keeps measuring the step *before*
+//! into a different one (and the telemetry of `/rustclient ai` keeps measuring the step *before*
 //! the bend, so the line would lie).
 //!
 //! So with `AIHand = On` and `Engine = AI`:

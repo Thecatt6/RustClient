@@ -1,6 +1,6 @@
 //! Where on the enemy the aim is pulled to, and how hard it pulls.
 //!
-//! Ported from `AimEngine.kt`: `pointOn`, `closestPoint`, `clampAxis`, `onCrosshair`, `bubble`,
+//! Reimplemented from `AimEngine.kt`: `pointOn`, `closestPoint`, `clampAxis`, `onCrosshair`, `bubble`,
 //! `hitboxRadius`, the lead and the small periodically redrawn in-box offset. The exact closest
 //! crosshair angle is LiquidBounce 0.42.0's `RotationUtil.crosshairAngleToEntity` / `maxCosToBox`:
 //! it tests the ray against the box, then minimizes over the silhouette edges instead of aiming at
@@ -213,7 +213,7 @@ pub fn on_crosshair(
 
 /// Maximum cosine between the unit crosshair vector and any direction from `eyes` to the box.
 ///
-/// This ports LiquidBounce v0.42.0's `maxCosToBox`: a ray hit is a cosine of one; on a miss, the
+/// This reproduces LiquidBounce v0.42.0's `maxCosToBox`: a ray hit is a cosine of one; on a miss, the
 /// closest direction lies on a silhouette edge and the stationary point of each candidate edge is
 /// evaluated along with its endpoints.
 pub fn max_cos_to_box(eyes: Vec3, view: Vec3, bbox: &Aabb) -> f64 {

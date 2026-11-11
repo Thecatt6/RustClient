@@ -4,7 +4,7 @@
 //! A regression does not err noisily, it errs coherently. While the model is inside the situation
 //! it was fitted on, its step and the curve's step over the same delta move together — the Pearson
 //! correlation of the two traces over the last [`crate::aim::ai_stats::WINDOW`] ticks stays high
-//! (this is the `corr 0.71` of `/liquidaddon ai`). When the fight walks somewhere the training never
+//! (this is the `corr 0.71` of `/rustclient ai`). When the fight walks somewhere the training never
 //! saw — a distance, an angle, a target speed outside the recorded cloud — the model keeps
 //! answering, but its answers stop tracking the geometry of the situation: the correlation decays
 //! while the steps still look confident. That is the shape of a model extrapolating, and

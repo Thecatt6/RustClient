@@ -1,4 +1,4 @@
-//! Testable logic ported from `LiquidAddon`'s `DoubleClicks` module
+//! Testable RustClient logic modeled on the upstream `DoubleClicks` behavior
 //! (`modules/doubleclicks/DoubleClickScheduler.kt`).
 //!
 //! The module answers each real click with up to three delayed follow-ups, and the whole difficulty
